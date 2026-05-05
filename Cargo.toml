@@ -32,7 +32,13 @@ oxrdf = "0.3"
 oxrdfio = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-pyo3 = { version = "0.28", features = ["extension-module"], optional = true }
+# abi3-py313: ship one wheel per OS/arch that works on every CPython 3.13+
+# minor (3.13, 3.14, 3.15, ...). Without this flag, every new Python minor
+# requires a re-release. Per docs/oss/30-rust-packaging/abi3-decision.md,
+# kaos-graph crosses the Python boundary at API entry and loops Rust-side,
+# so the ~1% theoretical abi3 indirection cost is unmeasurable on real
+# workloads (FOLIO PageRank, BEIR retrieval).
+pyo3 = { version = "0.28", features = ["extension-module", "abi3-py313"], optional = true }
 # bincode removed at v0.1.0a1 — RUSTSEC-2025-0141 marks 1.x as unmaintained
 # and the crate was an unreferenced direct dep (audit A2-#9). If a future
 # release needs binary serde, switch to bincode 2.x with a pin reviewed

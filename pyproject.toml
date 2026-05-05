@@ -87,7 +87,10 @@ dev = [
 [tool.maturin]
 python-source = "python"
 module-name = "kaos_graph._rust"
-features = ["pyo3/extension-module"]
+# abi3-py313: build the stable-ABI wheel so one binary per OS/arch covers
+# every CPython 3.13+ minor. Wheel filename gets `cp313-abi3` instead of
+# `cp313-cp313`. Mirror in Cargo.toml's `pyo3` feature list.
+features = ["pyo3/extension-module", "pyo3/abi3-py313"]
 include = [
   { path = "LICENSE", format = "sdist" },
   { path = "NOTICE", format = "sdist" },
