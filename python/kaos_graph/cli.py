@@ -14,7 +14,9 @@ def main(argv: list[str] | None = None) -> None:
         print("Commands: serve, version")
         return
     if args[0] == "version":
-        from kaos_graph._rust import __version__
+        # Use the package-level __version__ which is sourced from
+        # importlib.metadata so it matches `pip show kaos-graph`.
+        from kaos_graph import __version__
 
         print(f"kaos-graph {__version__}")
     elif args[0] == "serve":
