@@ -1,0 +1,240 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # ────────────── lint (Python + Rust) ──────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cargo fmt
+        run: cargo fmt --check
+
+      - name: Cargo clippy (no PyO3 features)
+        run: cargo clippy --no-default-features --all-targets -- -D warnings
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Install dependencies (rdf extra so ty resolves pyoxigraph)
+        run: uv sync --group dev --extra rdf --python 3.13
+
+      - name: Ruff format check
+        run: uv run ruff format --check python/kaos_graph tests
+
+      - name: Ruff lint
+        run: uv run ruff check python/kaos_graph tests
+
+      - name: Type check (ty)
+        run: uv run ty check python/kaos_graph tests
+
+  # ────────────── pre-commit ──────────────
+  pre-commit:
+    name: Pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Install dependencies (rdf extra so the ty hook resolves pyoxigraph)
+        run: uv sync --group dev --extra rdf --python 3.13
+
+      - name: Run pre-commit
+        run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  # ────────────── Rust unit tests (pure Rust core) ──────────────
+  rust-test:
+    name: Rust tests (no PyO3)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cargo test (--no-default-features)
+        run: cargo test --no-default-features --lib
+
+  # ────────────── Python tests (Python × maturin develop) ──────────────
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.13"
+            experimental: false
+          - python-version: "3.14"
+            experimental: false
+          - python-version: "3.14t"
+            experimental: true
+          - python-version: "3.15"
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python ${{ matrix.python-version }}
+        run: uv python install --preview ${{ matrix.python-version }}
+
+      - name: Install dependencies (rdf extra for SPARQL tests)
+        run: uv sync --group dev --extra rdf --python ${{ matrix.python-version }}
+
+      - name: Build PyO3 extension (maturin develop --release)
+        run: uv run maturin develop --release
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest \
+            -m "not live and not network and not slow" \
+            --cov=kaos_graph \
+            --cov-branch \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            tests/
+
+      - name: Upload coverage report
+        if: always() && !matrix.experimental
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
+          retention-days: 14
+
+  # ────────────── min-deps ──────────────
+  min-deps:
+    name: Test against minimum dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Install with lowest-direct resolution (rdf extra)
+        run: uv sync --group dev --extra rdf --resolution=lowest-direct --python 3.13
+
+      - name: Build PyO3 extension
+        run: uv run maturin develop --release
+
+      - name: Run tests
+        run: |
+          uv run pytest \
+            -m "not live and not network and not slow" \
+            --no-cov \
+            -q \
+            tests/
+
+  # ────────────── build + wheel smoke test ──────────────
+  build:
+    name: Build distribution + smoke test
+    runs-on: ubuntu-latest
+    needs: [lint, test, rust-test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Build wheel + sdist
+        run: uv build
+
+      - name: Verify metadata (twine check)
+        run: uvx --from twine twine check --strict dist/*
+
+      - name: Smoke-test the built wheel in a clean venv
+        run: |
+          uv venv --python 3.13 /tmp/smoke
+          uv pip install --python /tmp/smoke/bin/python dist/kaos_graph-*-cp*.whl
+          /tmp/smoke/bin/python -c "
+          import kaos_graph
+          from kaos_graph import Graph
+          assert kaos_graph.__version__, 'version missing from wheel'
+          assert len(kaos_graph.__all__) >= 6, f'unexpected public surface: {kaos_graph.__all__}'
+          # Round-trip a small graph through Rust + JSON.
+          g = Graph()
+          g.add_node('a', role='engineer')
+          g.add_node('b')
+          g.add_edge('a', 'b', weight=1.0)
+          assert g.n_nodes == 2 and g.n_edges == 1
+          js = g.to_json()
+          g2 = Graph.from_json(js)
+          assert g2.n_nodes == 2 and g2.n_edges == 1
+          # Run a real algorithm.
+          from kaos_graph.algorithms import pagerank
+          ranks = pagerank(g)
+          assert len(ranks) == 2
+          print(f'kaos-graph {kaos_graph.__version__}: smoke OK')
+          "
+          # Exercise the CLI entrypoint.
+          /tmp/smoke/bin/kaos-graph version
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7

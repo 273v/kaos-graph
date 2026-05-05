@@ -1,0 +1,45 @@
+[package]
+name = "kaos-graph"
+version = "0.1.0-alpha.1"
+edition = "2021"
+rust-version = "1.83"
+license = "Apache-2.0"
+authors = ["273 Ventures LLC <it@273ventures.com>"]
+description = "High-performance graph library for the Kelvin Agentic OS — petgraph-backed engine, 40+ algorithms, RDF/SPARQL, knowledge-graph tools"
+repository = "https://github.com/273v/kaos-graph"
+homepage = "https://kelvin.legal"
+documentation = "https://docs.kelvin.legal"
+readme = "README.md"
+keywords = ["graph", "kaos", "petgraph", "rdf", "sparql"]
+categories = ["data-structures", "algorithms"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lib]
+name = "_rust"
+path = "rust/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+pyo3 = ["dep:pyo3"]
+
+[dependencies]
+petgraph = { version = "0.8", features = ["serde-1", "stable_graph"] }
+oxrdf = "0.3"
+oxrdfio = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+pyo3 = { version = "0.28", features = ["extension-module"], optional = true }
+# bincode removed at v0.1.0a1 — RUSTSEC-2025-0141 marks 1.x as unmaintained
+# and the crate was an unreferenced direct dep (audit A2-#9). If a future
+# release needs binary serde, switch to bincode 2.x with a pin reviewed
+# under cargo-deny.
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = "symbols"

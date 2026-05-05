@@ -1,0 +1,41 @@
+# Build artifacts
+/target/
+/dist/
+/build/
+*.so
+*.pyd
+*.egg-info/
+
+# Test/runtime artifacts (must NOT ship in sdist or wheel)
+/.kaos-vfs/
+/.pytest_cache/
+/.ruff_cache/
+/.coverage
+/htmlcov/
+
+# Virtualenvs and env files
+/.venv/
+/.env
+/.env.*
+!/.env.example
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor / OS clutter
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/
+
+# uv.lock — NOT committed at v0.1.0a1 because [project.optional-dependencies]
+# declares extras pointing at not-yet-published sibling packages
+# (kaos-mcp, kaos-content, kaos-llm-core). uv lock is strict: it requires
+# every declared extra to resolve. Per D016 (decisions.md) those extras
+# stay declared but unresolvable until Wave 3 publishes. When all sibling
+# packages are on PyPI, regenerate the lock and remove this gitignore line
+# (matching kaos-core's convention of committed uv.lock).
+uv.lock
