@@ -2,7 +2,7 @@
   "test_command": [
     "sh",
     "-lc",
-    "cargo test --no-default-features --lib && uv run maturin develop --release && uv run pytest -m 'not live and not network and not slow' --junitxml={artifacts}/pytest-junit.xml --cov=kaos_graph --cov-branch --cov-report=term-missing --cov-report=xml:{artifacts}/coverage.xml tests/"
+    "cargo test --no-default-features --lib && uv run --extra rdf maturin develop --release && uv run --extra rdf pytest -m 'not live and not network and not slow' --junitxml={artifacts}/pytest-junit.xml --cov=kaos_graph --cov-branch --cov-report=term-missing --cov-report=xml:{artifacts}/coverage.xml tests/"
   ],
   "test_result_format": "cargo_test",
   "test_result_globs": [
