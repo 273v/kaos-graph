@@ -406,8 +406,7 @@ pub fn k_clique_communities(graph: &Graph, k: usize) -> Vec<Vec<String>> {
     }
 
     // Step 4: Group cliques by connected component.
-    let mut component_map: std::collections::HashMap<usize, Vec<usize>> =
-        std::collections::HashMap::new();
+    let mut component_map: HashMap<usize, Vec<usize>> = HashMap::new();
     for i in 0..n {
         let root = uf.find(i);
         component_map.entry(root).or_default().push(i);

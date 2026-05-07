@@ -60,8 +60,7 @@ pub fn dfs_events(graph: &Graph, source: &str) -> Result<Vec<(String, bool)>, St
                         }
                         result.push((graph.id_of(node).to_string(), true));
                         stack.push(Action::Exit(node));
-                        let neighbors: Vec<_> =
-                            petgraph::visit::IntoNeighbors::neighbors(g, node).collect();
+                        let neighbors: Vec<_> = IntoNeighbors::neighbors(g, node).collect();
                         for &child in neighbors.iter().rev() {
                             if !visited.contains(&child) {
                                 stack.push(Action::Enter(child));

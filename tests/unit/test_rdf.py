@@ -1,11 +1,20 @@
-"""Tests for RDF/OWL loading, export, and SPARQL query."""
+"""Tests for RDF/OWL loading, export, and SPARQL query.
 
+The FOLIO-loading test that downloads a multi-MiB ontology lives in
+``tests/integration/test_folio_owl.py`` per audit-01 KG-002 — keeping this
+module hermetic (no network I/O at unit-test time).
+
+SPARQL tests are gated on ``pyoxigraph`` (the optional ``rdf`` extra) per
+audit-01 KG-003. ``importlib.util.find_spec`` checks installation without
+importing the module, so the gate is collection-safe.
+"""
+
+import importlib.util
 import json
-from pathlib import Path
 
 import pytest
 
-from kaos_graph.rdf import RdfLoadStats, load_owl, load_rdf, to_jsonld, to_ntriples, to_turtle
+from kaos_graph.rdf import RdfLoadStats, load_rdf, to_jsonld, to_ntriples, to_turtle
 from kaos_graph.rdf.sparql import SparqlResult, query_sparql, query_sparql_ask
 
 TURTLE = """
@@ -40,36 +49,6 @@ class TestLoadRdf:
         assert stats.load_time_ms >= 0
         # literal_properties should account for the rdfs:label triples
         assert stats.literal_properties >= 0
-
-
-class TestLoadOwl:
-    def test_load_owl_folio(self, folio_owl_path: Path) -> None:
-        # ``folio_owl_path`` fixture (tests/conftest.py) downloads FOLIO on
-        # first use; CI hosts without network egress can set
-        # ``KAOS_GRAPH_FOLIO_PATH`` to a pre-staged copy.
-        from kaos_graph import Graph
-        from kaos_graph.algorithms import pagerank
-
-        g, stats = load_owl(folio_owl_path)
-        assert g.n_nodes > 1000
-        assert stats.total_triples > 0
-
-        # Run pagerank on the ontology graph
-        ranks = pagerank(g)
-        assert len(ranks) > 0
-        assert ranks[0].score > 0
-
-        # JSON round-trip — large graph; raise the cap above default 64 MiB
-        # so to_json/from_json passes for FOLIO's ~25K nodes.
-        class _S:
-            max_bytes = 1 << 30  # 1 GiB
-            max_nodes = 1_000_000
-            max_edges = 10_000_000
-
-        json_str = g.to_json()
-        g2 = Graph.from_json(json_str, settings=_S())
-        assert g2.n_nodes == g.n_nodes
-        assert g2.n_edges == g.n_edges
 
 
 class TestExportTurtle:
@@ -115,8 +94,16 @@ class TestExportNTriples:
         assert g2.n_edges == g.n_edges
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("pyoxigraph") is None,
+    reason="pyoxigraph not installed (kaos-graph[rdf] extra required)",
+)
 class TestSparql:
-    """SPARQL query tests using pyoxigraph."""
+    """SPARQL query tests using pyoxigraph.
+
+    Audit-01 KG-003: gated on pyoxigraph so unit-only installs (which omit
+    the ``rdf`` extra) skip cleanly instead of failing at runtime.
+    """
 
     def test_sparql_basic(self):
         """Basic SPARQL SELECT over an RDF-loaded graph."""

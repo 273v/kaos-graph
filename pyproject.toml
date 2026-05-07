@@ -137,11 +137,16 @@ known-first-party = ["kaos_graph"]
 
 [tool.ty.src]
 include = ["python/kaos_graph", "tests"]
-# tests/unit/test_programs.py exercises the kaos-llm-core integration path.
-# Until kaos-llm-core publishes (Wave 3), the imports are unresolvable from
-# ty's static view but skip cleanly at runtime via ImportError fallbacks.
-# Re-include this file in 0.1.0a2 once kaos-llm-core is on PyPI.
-exclude = ["tests/unit/test_programs.py"]
+# tests/unit/test_programs.py exercises the kaos-llm-core integration path
+# and python/kaos_graph/tools/_programs.py registers the kaos-graph-trace-to-graph
+# MCP tool that lazy-imports kaos-llm-core. Until kaos-llm-core publishes
+# (Wave 3), those imports are unresolvable from ty's static view but skip
+# cleanly at runtime via ImportError fallbacks. Re-include both files in
+# the patch release that brings the sibling back.
+exclude = [
+  "tests/unit/test_programs.py",
+  "python/kaos_graph/tools/_programs.py",
+]
 
 [tool.uv]
 package = true

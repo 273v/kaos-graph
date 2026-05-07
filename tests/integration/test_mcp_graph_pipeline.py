@@ -594,13 +594,14 @@ class TestAlgorithms:
 
 class TestExport:
     async def test_export_json(self, runtime: KaosRuntime, graph_data: str) -> None:
-        """Export to JSON produces valid, parseable JSON with graph structure."""
+        """Export to JSON produces valid JSON in the structured ``output`` field."""
         tool = _tool(runtime, "kaos-graph-export")
         result = await tool.execute({"graph_json": graph_data, "format": "json"})
 
         assert not result.isError
-        parsed = json.loads(result.text or "")
-        # Should contain nodes and edges or be a valid graph structure
+        sc = _structured(result)
+        # Audit-01 KG-005: payload lives in structuredContent['output'].
+        parsed = json.loads(sc["output"])
         assert isinstance(parsed, dict)
 
     async def test_export_mermaid(self, runtime: KaosRuntime, graph_data: str) -> None:
@@ -609,7 +610,7 @@ class TestExport:
         result = await tool.execute({"graph_json": graph_data, "format": "mermaid"})
 
         assert not result.isError
-        text = result.text or ""
+        text = _structured(result)["output"]
         assert "flowchart" in text or "graph" in text
         assert "ceo" in text
         assert "vp_eng" in text
@@ -620,7 +621,7 @@ class TestExport:
         result = await tool.execute({"graph_json": graph_data, "format": "dot"})
 
         assert not result.isError
-        text = result.text or ""
+        text = _structured(result)["output"]
         assert "digraph" in text
         assert "ceo" in text
 
@@ -630,7 +631,7 @@ class TestExport:
         result = await tool.execute({"graph_json": graph_data, "format": "graphml"})
 
         assert not result.isError
-        text = result.text or ""
+        text = _structured(result)["output"]
         assert "<graphml" in text or "graphml" in text.lower()
 
     async def test_export_gexf(self, runtime: KaosRuntime, graph_data: str) -> None:
@@ -639,7 +640,7 @@ class TestExport:
         result = await tool.execute({"graph_json": graph_data, "format": "gexf"})
 
         assert not result.isError
-        text = result.text or ""
+        text = _structured(result)["output"]
         assert "<gexf" in text or "gexf" in text.lower()
 
     async def test_export_adjacency_roundtrip(self, runtime: KaosRuntime, graph_data: str) -> None:
@@ -650,7 +651,8 @@ class TestExport:
         export_result = await export_tool.execute({"graph_json": graph_data})
         assert not export_result.isError
 
-        adjacency_str = export_result.text or ""
+        # Audit-01 KG-005: adjacency JSON lives in structuredContent['adjacency_json'].
+        adjacency_str = _structured(export_result)["adjacency_json"]
         load_result = await load_tool.execute({"adjacency_json": adjacency_str})
         assert not load_result.isError
         load_sc = _structured(load_result)
@@ -665,14 +667,14 @@ class TestExport:
 
 class TestVisualize:
     async def test_visualize_default(self, runtime: KaosRuntime, graph_data: str) -> None:
-        """Visualize produces Mermaid output with all nodes."""
+        """Visualize produces Mermaid output with all nodes (audit-01 KG-005)."""
         tool = _tool(runtime, "kaos-graph-visualize")
         result = await tool.execute({"graph_json": graph_data})
 
         assert not result.isError
-        text = result.text or ""
-        assert "flowchart" in text
-        assert "ceo" in text
+        diagram = _structured(result)["diagram"]
+        assert "flowchart" in diagram
+        assert "ceo" in diagram
 
     async def test_visualize_with_direction(self, runtime: KaosRuntime, graph_data: str) -> None:
         """Visualize respects the direction parameter."""
@@ -680,8 +682,8 @@ class TestVisualize:
         result = await tool.execute({"graph_json": graph_data, "direction": "LR"})
 
         assert not result.isError
-        text = result.text or ""
-        assert "LR" in text
+        diagram = _structured(result)["diagram"]
+        assert "LR" in diagram
 
 
 # ---------------------------------------------------------------------------
@@ -1005,11 +1007,11 @@ class TestEndToEndPipeline:
         assert not info_result.isError
         assert _structured(info_result)["n_nodes"] == 3
 
-        # Step 5: Export subgraph to Mermaid
+        # Step 5: Export subgraph to Mermaid (audit-01 KG-005: structured payload).
         export_tool = _tool(runtime, "kaos-graph-export")
         export_result = await export_tool.execute({"graph_json": sub_data, "format": "mermaid"})
         assert not export_result.isError
-        assert "flowchart" in (export_result.text or "")
+        assert "flowchart" in _structured(export_result)["output"]
 
     async def test_create_stats_find_patterns(self, runtime: KaosRuntime) -> None:
         """Pipeline: create -> stats -> find patterns -> query specific node."""

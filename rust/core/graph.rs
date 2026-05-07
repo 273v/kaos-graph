@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use petgraph::stable_graph::{EdgeIndex, NodeIndex, StableDiGraph, StableUnGraph};
 use petgraph::visit::{EdgeRef, IntoEdgeReferences, NodeIndexable};
@@ -481,8 +481,8 @@ impl Graph {
         let start = self.resolve_index(center)?;
 
         // BFS to find all nodes within radius.
-        let mut visited = std::collections::HashMap::new();
-        let mut queue = std::collections::VecDeque::new();
+        let mut visited = HashMap::new();
+        let mut queue = VecDeque::new();
         visited.insert(start, 0usize);
         queue.push_back((start, 0usize));
 

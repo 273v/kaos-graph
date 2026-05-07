@@ -374,7 +374,7 @@ fn k_clique_communities(graph: &PyGraph, k: usize) -> Vec<Vec<String>> {
 }
 
 /// Register the algorithms submodule.
-pub fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
+pub(crate) fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new(parent.py(), "algorithms")?;
 
     // Traversal
