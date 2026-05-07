@@ -440,6 +440,102 @@ def test_adjacency_json_invalid() -> None:
         load_adjacency_json("not json {{{")
 
 
+def test_adjacency_json_top_level_must_be_object() -> None:
+    """Top-level JSON arrays / strings raise ValueError."""
+    import pytest
+
+    with pytest.raises(ValueError, match="JSON object at top level"):
+        load_adjacency_json("[]")
+
+
+def test_adjacency_json_nodes_must_be_object() -> None:
+    """A non-mapping ``nodes`` value is rejected (audit KG-001)."""
+    import pytest
+
+    with pytest.raises(ValueError, match="'nodes' must be a JSON object"):
+        load_adjacency_json('{"nodes": ["a", "b"]}')
+
+
+def test_adjacency_json_edges_must_be_object() -> None:
+    """A non-mapping ``edges`` value is rejected (audit KG-001)."""
+    import pytest
+
+    with pytest.raises(ValueError, match="'edges' must be a JSON object"):
+        load_adjacency_json('{"nodes": {}, "edges": []}')
+
+
+# --- Cap-enforcement tests (audit KG-001) ---
+
+
+class _CapsSettings:
+    """Lightweight stand-in for KaosGraphSettings used in cap tests.
+
+    The loader uses duck typing on ``max_bytes`` / ``max_nodes`` / ``max_edges``
+    so we do not need pydantic-settings here.
+    """
+
+    __slots__ = ("max_bytes", "max_edges", "max_nodes")
+
+    def __init__(self, *, max_bytes: int = 10**9, max_nodes: int = 10**9, max_edges: int = 10**9):
+        self.max_bytes = max_bytes
+        self.max_nodes = max_nodes
+        self.max_edges = max_edges
+
+
+def test_adjacency_json_max_bytes_enforced() -> None:
+    """Inputs larger than ``max_bytes`` are refused before json.loads."""
+    import pytest
+
+    payload = '{"nodes": {"a": {}}}'  # 19 bytes
+    settings = _CapsSettings(max_bytes=5)
+    with pytest.raises(ValueError, match=r"max_bytes is 5"):
+        load_adjacency_json(payload, settings=settings)
+
+
+def test_adjacency_json_max_nodes_enforced() -> None:
+    """A node-list exceeding ``max_nodes`` is refused mid-parse."""
+    import pytest
+
+    payload = json.dumps({"nodes": {"a": {}, "b": {}, "c": {}}, "edges": {}})
+    settings = _CapsSettings(max_nodes=2)
+    with pytest.raises(ValueError, match=r"more than 2 nodes"):
+        load_adjacency_json(payload, settings=settings)
+
+
+def test_adjacency_json_max_nodes_enforced_via_edges() -> None:
+    """Implicit nodes created from edge endpoints also count toward max_nodes."""
+    import pytest
+
+    payload = json.dumps({"nodes": {}, "edges": {"a": [["b", {}], ["c", {}]]}})
+    settings = _CapsSettings(max_nodes=2)
+    with pytest.raises(ValueError, match=r"more than 2 nodes"):
+        load_adjacency_json(payload, settings=settings)
+
+
+def test_adjacency_json_max_edges_enforced() -> None:
+    """Edge construction halts once ``max_edges`` is reached."""
+    import pytest
+
+    payload = json.dumps(
+        {
+            "nodes": {"a": {}, "b": {}, "c": {}},
+            "edges": {"a": [["b", {}], ["c", {}]]},
+        }
+    )
+    settings = _CapsSettings(max_edges=1)
+    with pytest.raises(ValueError, match=r"more than 1 edges"):
+        load_adjacency_json(payload, settings=settings)
+
+
+def test_adjacency_json_default_caps_allow_round_trip() -> None:
+    """Default caps comfortably accommodate the small fixture graphs used elsewhere."""
+    g = _make_simple_graph()
+    adj = to_adjacency_json(g)
+    g2 = load_adjacency_json(adj, settings=_CapsSettings())
+    assert g2.n_nodes == g.n_nodes
+    assert g2.n_edges == g.n_edges
+
+
 # --- Mixed-type property round-trip tests ---
 
 

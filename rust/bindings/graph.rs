@@ -9,7 +9,7 @@ use serde_json::Value;
 use crate::core::graph::Graph;
 
 /// Convert a serde_json::Value to a Python object.
-fn value_to_py(py: Python<'_>, v: &Value) -> PyResult<Py<pyo3::PyAny>> {
+fn value_to_py(py: Python<'_>, v: &Value) -> PyResult<Py<PyAny>> {
     match v {
         Value::Null => Ok(py.None()),
         Value::Bool(b) => Ok(b.into_pyobject(py)?.to_owned().into_any().unbind()),
@@ -41,7 +41,7 @@ fn value_to_py(py: Python<'_>, v: &Value) -> PyResult<Py<pyo3::PyAny>> {
 }
 
 /// Convert a Python object to serde_json::Value.
-fn py_to_value(obj: &Bound<'_, pyo3::PyAny>) -> PyResult<Value> {
+fn py_to_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
     if obj.is_none() {
         Ok(Value::Null)
     } else if let Ok(b) = obj.extract::<bool>() {
@@ -392,7 +392,7 @@ impl PyGraph {
     // --- Filtering ---
 
     /// Return node IDs where the property `key` equals `value`.
-    fn nodes_filtered(&self, key: &str, value: &Bound<'_, pyo3::PyAny>) -> PyResult<Vec<String>> {
+    fn nodes_filtered(&self, key: &str, value: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
         let val = py_to_value(value)?;
         Ok(self.inner.nodes_filtered(key, &val))
     }
@@ -403,7 +403,7 @@ impl PyGraph {
         &self,
         py: Python<'_>,
         key: &str,
-        value: &Bound<'_, pyo3::PyAny>,
+        value: &Bound<'_, PyAny>,
     ) -> PyResult<Vec<(String, String, Py<PyDict>)>> {
         let val = py_to_value(value)?;
         let edges = self.inner.edges_filtered(key, &val);
@@ -460,7 +460,7 @@ impl PyGraph {
 }
 
 /// Register the graph submodule.
-pub fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
+pub(crate) fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new(parent.py(), "graph")?;
     m.add_class::<PyGraph>()?;
 

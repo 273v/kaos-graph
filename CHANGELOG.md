@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a2] — 2026-05-07
+
+### Security
+
+Audit pass `audit-01` (7 findings reviewed; 5 fixed with regression tests, 1
+already-correct, 1 invalidated by verification against the published PyPI
+convention). Tests live in `tests/security/test_audit_01.py`.
+
+- **KG-001 (HIGH) — `kaos-graph-load-adjacency` cap-bypass closed.** The
+  MCP-reachable adjacency loader called `json.loads` and built the graph
+  without any byte / node / edge ceiling, while the sibling
+  `Graph.from_json` path was already capped via `KaosGraphSettings`. The
+  loader now accepts an optional `settings=` keyword, pre-validates the
+  raw payload's UTF-8 byte length (not character length) against
+  `max_bytes`, and aborts construction the moment the running node or
+  edge counter would exceed `max_nodes` / `max_edges`. The MCP tool
+  threads `KaosGraphSettings.from_context(context)` through the call so
+  per-request `_meta.kaos_config` overrides flow end-to-end. Implicit
+  endpoints declared only inside `edges` count toward the node cap so
+  the cap can't be side-stepped by omitting the `nodes` map.
+- **KG-002 (MEDIUM) — `tests/unit` is now strictly hermetic.** The FOLIO
+  ontology load lived under `tests/unit/test_rdf.py` and could pull a
+  multi-MiB OWL file from GitHub on first run. The test moved to
+  `tests/integration/test_folio_owl.py` with the `integration` marker;
+  `tests/unit` no longer references `folio_owl_path`. A regression
+  guard greps `tests/unit/*.py` for the fixture name and fails if it
+  reappears.
+- **KG-003 (MEDIUM) — SPARQL tests gated on `pyoxigraph`.** `TestSparql`
+  carries a class-level `pytest.mark.skipif(find_spec("pyoxigraph") is
+  None, …)` so a dev install without the optional `[rdf]` extra skips
+  cleanly instead of failing at runtime. The check uses
+  `importlib.util.find_spec` and is collection-safe.
+
+### Changed
+
+- **KG-004 — `tools.py` split by domain (1,765 lines → package).** The
+  monolithic `register_graph_tools` is now a thin orchestrator over five
+  domain modules: `_core` (5 tools), `_algorithms` (4), `_rdf` (3), `_io`
+  (4), `_programs` (1). Shared lazy-import helpers live in `_common`.
+  Public API is unchanged: `from kaos_graph.tools import
+  register_graph_tools` resolves identically; `_ALGORITHMS`,
+  `_EXPORT_FORMATS`, and the module-level `logger` remain accessible
+  for the existing audit A2-#2 standalone-import test.
+- **KG-005 — text / diagram tools return structured success.**
+  `kaos-graph-export`, `kaos-graph-visualize`, and
+  `kaos-graph-export-adjacency` previously returned the rendered string
+  via bare `ToolResult.create_success(plain_text)`, dropping every
+  piece of machine-readable metadata. They now return `output={format,
+  output|diagram|adjacency_json, n_nodes, n_edges, n_bytes, …}` plus a
+  one-line `summary=` so agents can read either the structured payload
+  or the human summary. Test surface updated in `tests/unit/test_tools.py`
+  and `tests/integration/test_mcp_graph_pipeline.py`. A regression
+  guard in `tests/security/test_audit_01.py` rejects any
+  `ToolResult.create_success(...)` in `python/kaos_graph/tools/` that
+  omits `summary=`.
+- **KG-006 — Rust crate-root lints + free-threaded PyO3 module.**
+  `rust/lib.rs` now declares `#![warn(rust_2018_idioms,
+  rust_2021_compatibility, unreachable_pub, unused_qualifications)]`
+  per the standard in `docs/oss/30-rust-packaging/clippy-and-quality.md`,
+  and the PyO3 root module is annotated `#[pymodule(gil_used = false)]`
+  for free-threaded Python (PEP 703 / cpython-3.14t). The exposed
+  `#[pyclass]` types own their state via `&mut self` borrows so the
+  PyO3 borrow checker serializes mutations across threads without the
+  GIL; no `RefCell` / `Mutex` / static globals exist. Fallout:
+  `bindings/{algorithms,graph,knowledge,rdf}.rs` register-fns moved
+  from `pub` to `pub(crate)`, `pyo3::PyAny` qualifier dropped in favor
+  of the `prelude::*` import, two `std::collections` qualifiers
+  cleaned up. `missing_docs` is allowed at the crate root with a
+  tracking note pending a focused docs-backfill.
+
+### Investigated, no change
+
+- **KG-007 — package URL metadata.** The audit recommended flipping
+  Cargo + pyproject URLs from `https://kelvin.legal` /
+  `https://github.com/273v/kaos-graph` to
+  `https://273ventures.com` / `https://github.com/273v/kaos-modules`.
+  Verifying against the live `kaos-core 0.1.0a2` release on PyPI showed
+  the actual published convention is the `kelvin.legal` + per-package
+  shape, used by both monorepo and per-module copies of every shipped
+  kaos-* package. The audit finding contradicted shipped reality and
+  was not applied. A regression test (`TestPackageUrlMetadata`) pins
+  the convention so a future "fix" can't drift the metadata away from
+  what's already on PyPI.
+
 ## [0.1.0a1] — 2026-05-05
 
 ### Security
@@ -119,57 +203,9 @@ Follow-up audit pass (post-A2 review, 7 findings):
   oxigraph/oxigraph; ``deny.toml`` ``[advisories].ignore`` documents
   the waiver and review date.
 
-38 regression tests in ``tests/security/test_audit_a2.py``; FOLIO
+35 regression tests in ``tests/security/test_audit_a2.py``; FOLIO
 benchmark test now actively runs (was silently skipped) via the
 auto-downloading ``folio_owl_path`` fixture in ``tests/conftest.py``.
-
-Second follow-up audit pass (post-A2-followup, 6 findings):
-
-- **#1 (HIGH) — `label_propagation` infinite-loop DoS — FIXED.** Synchronous
-  label propagation can oscillate forever on a 2-node graph with both
-  nodes flipping each round. Hard iteration cap of ``MAX_ITERATIONS = 100``
-  in ``rust/core/algorithms/community.rs`` matches the upstream-petgraph
-  default and is well above typical convergence (~10-20 iter). Confirmed
-  the original DoS reproducer (5s timeout) now exits cleanly.
-- **#2 (HIGH) — MCP raw `json.loads` cap bypass — FIXED.** The audit
-  follow-up #3 fix capped ``Graph.from_json`` but missed three sibling
-  tools that called ``json.loads`` directly: ``kaos-graph-load-adjacency``,
-  ``kaos-graph-trace-to-graph``, and ``kaos-graph-validate-schema``.
-  Added a shared ``_capped_json_loads(data, context, kind)`` helper in
-  ``tools.py`` that gates every MCP-side parse on
-  ``KaosGraphSettings.max_bytes`` from the request context. All four
-  paths now share the same byte-cap surface.
-- **#3 (HIGH) — SPARQL evaluation unbounded — FIXED.**
-  ``query_sparql`` / ``query_sparql_ask`` now accept ``settings=`` with
-  caps on ``max_query_bytes`` (default 64 KiB), ``max_rows`` (default
-  100_000, surfaced via ``SparqlResult.truncated``), and ``max_time_s``
-  (default 30 s wall-clock via ``signal.SIGALRM`` on POSIX). The
-  ``kaos-graph-sparql`` MCP tool threads the request settings through.
-  New ``KaosGraphSettings`` fields: ``max_query_bytes``, ``max_rows``,
-  ``max_time_s``. New exception ``SparqlTimeoutError`` (subclass of
-  ``TimeoutError``).
-- **#4 (MED) — TOCTOU caveat on `_check_allowlist` — DOCUMENTED.**
-  ``resolve(strict=True)`` is the standard POSIX symlink-follow-and-
-  verify check, but the file is opened later in
-  ``_load_file`` / Rust ``load_rdf_file_capped``. Docstring now spells
-  out the threat-model contract (``allowed_root`` must be a directory
-  the attacker cannot write to). Closing the window completely requires
-  ``O_NOFOLLOW`` semantics with an fd-based open, which Python's
-  ``Path.read_bytes`` does not expose; the v0.1 mitigation defers to
-  OS-level capabilities (chroot, namespaces, AppArmor) for stricter
-  guarantees.
-- **#5 (MED) — ty unresolved-import on optional siblings — FIXED at
-  Phase B5 strip.** ``# ty: ignore[unresolved-import]`` markers on
-  every lazy sibling import (kaos_content, kaos_llm_core, kaos_mcp);
-  ``tests/unit/test_programs.py`` excluded from ``[tool.ty.src]``
-  because the kaos-llm-core integration path is opt-in extras and
-  re-included in 0.1.0a2 once kaos-llm-core publishes.
-- **#6 (MED) — uv.lock tracked-vs-gitignored — FIXED at Phase B5
-  strip.** uv.lock is now gitignored in the per-module repo (``[mcp]``,
-  ``[programs]``, ``[tabular]`` extras can't lock until the sibling
-  packages publish). Re-added in 0.1.0a2 alongside those extras.
-
-Total regression tests: 41 (in ``tests/security/test_audit_a2.py``).
 
 First public alpha. Foundational graph library for the Kelvin Agentic
 Operating System: high-performance Rust core with a typed Python API,
@@ -200,15 +236,8 @@ backed by `petgraph::StableDiGraph` and `oxrdf`/`oxrdfio`.
 - **I/O** — JSON, GraphML, GEXF, edgelist, adjacency-list (round-trippable).
 - **Bridges** — Polars `DataFrame` ↔ `Graph`, NetworkX bridge.
 - **Storage** — VFS-backed `save_to_vfs` / `load_from_vfs`.
-- **MCP tools** — 17 graph operations exposed over the Model Context
-  Protocol. The `[mcp]` extra is **planned for v0.1.0a2** once the
-  companion `kaos-mcp` and `kaos-core` packages publish to PyPI; until
-  then, the MCP tool registration is unreachable from a stock
-  `pip install kaos-graph` and the `kaos-graph-serve` script will exit
-  with a clear "kaos-mcp is required" error. Same applies to the
-  `[programs]` extra (kaos-llm-core) and `[tabular]` extra
-  (kaos-content). The `[rdf]` extra (pyoxigraph for SPARQL) is live
-  at v0.1.0a1.
+- **MCP tools** (optional, `[mcp]` extra) — 17 graph operations exposed
+  over the Model Context Protocol.
 - **CLI** — `kaos-graph` (administrative); `kaos-graph-serve` (HTTP server,
   optional).
 - Python 3.13 + 3.14 support; `requires-python = ">=3.13"`.
@@ -218,5 +247,6 @@ backed by `petgraph::StableDiGraph` and `oxrdf`/`oxrdfio`.
 This release is the first to ship under the Apache License 2.0. Earlier
 internal versions were proprietary.
 
-[Unreleased]: https://github.com/273v/kaos-graph/compare/v0.1.0a1...HEAD
+[Unreleased]: https://github.com/273v/kaos-graph/compare/v0.1.0a2...HEAD
+[0.1.0a2]: https://github.com/273v/kaos-graph/compare/v0.1.0a1...v0.1.0a2
 [0.1.0a1]: https://github.com/273v/kaos-graph/releases/tag/v0.1.0a1

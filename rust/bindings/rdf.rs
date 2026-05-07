@@ -87,7 +87,7 @@ fn export_jsonld(graph: &PyGraph) -> PyResult<String> {
 }
 
 /// Register the rdf submodule.
-pub fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
+pub(crate) fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new(parent.py(), "rdf")?;
     m.add_function(wrap_pyfunction!(load_rdf_file, &m)?)?;
     m.add_function(wrap_pyfunction!(load_rdf_string, &m)?)?;

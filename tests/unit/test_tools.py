@@ -230,14 +230,16 @@ class TestToolExecution:
 
     @pytest.mark.asyncio
     async def test_visualize_tool(self, tools: dict) -> None:
-        """kaos-graph-visualize returns Mermaid output."""
+        """kaos-graph-visualize returns Mermaid output (audit-01 KG-005: structured)."""
         tool = tools["kaos-graph-visualize"]
         result = await tool.execute({"graph_json": _make_graph_json()})
         assert not result.isError
-        text = result.text
-        assert text is not None
-        assert "flowchart" in text
-        assert "a" in text
+        assert result.structuredContent is not None
+        diagram = result.structuredContent["diagram"]
+        assert "flowchart" in diagram
+        assert "a" in diagram
+        assert result.structuredContent["format"] == "mermaid"
+        assert result.structuredContent["truncated"] is False
 
     @pytest.mark.asyncio
     async def test_create_tool(self, tools: dict) -> None:
@@ -348,7 +350,7 @@ class TestToolExecution:
 
     @pytest.mark.asyncio
     async def test_export_mermaid(self, tools: dict) -> None:
-        """kaos-graph-export produces Mermaid output."""
+        """kaos-graph-export produces Mermaid output (audit-01 KG-005: structured)."""
         tool = tools["kaos-graph-export"]
         result = await tool.execute(
             {
@@ -357,11 +359,13 @@ class TestToolExecution:
             }
         )
         assert not result.isError
-        assert "flowchart" in (result.text or "")
+        assert result.structuredContent is not None
+        assert result.structuredContent["format"] == "mermaid"
+        assert "flowchart" in result.structuredContent["output"]
 
     @pytest.mark.asyncio
     async def test_export_dot(self, tools: dict) -> None:
-        """kaos-graph-export produces DOT output."""
+        """kaos-graph-export produces DOT output (audit-01 KG-005: structured)."""
         tool = tools["kaos-graph-export"]
         result = await tool.execute(
             {
@@ -370,11 +374,13 @@ class TestToolExecution:
             }
         )
         assert not result.isError
-        assert "digraph" in (result.text or "")
+        assert result.structuredContent is not None
+        assert result.structuredContent["format"] == "dot"
+        assert "digraph" in result.structuredContent["output"]
 
     @pytest.mark.asyncio
     async def test_export_json(self, tools: dict) -> None:
-        """kaos-graph-export produces JSON output."""
+        """kaos-graph-export produces JSON output (audit-01 KG-005: structured)."""
         tool = tools["kaos-graph-export"]
         result = await tool.execute(
             {
@@ -383,8 +389,9 @@ class TestToolExecution:
             }
         )
         assert not result.isError
-        # Should be valid JSON
-        parsed = json.loads(result.text or "")
+        assert result.structuredContent is not None
+        # Should be valid JSON in the 'output' field of the structured payload.
+        parsed = json.loads(result.structuredContent["output"])
         assert "nodes" in parsed or "name" in parsed
 
 
@@ -660,8 +667,10 @@ class TestNewToolExecution:
         export_result = await export_tool.execute({"graph_json": graph_data})
         assert not export_result.isError
 
-        # Verify round-trip
-        exported = json.loads(export_result.text or "")
+        # Verify round-trip (audit-01 KG-005: adjacency JSON lives in structured output).
+        assert export_result.structuredContent is not None
+        assert export_result.structuredContent["format"] == "adjacency"
+        exported = json.loads(export_result.structuredContent["adjacency_json"])
         assert "x" in exported["nodes"]
         assert "y" in exported["nodes"]
         assert exported["directed"] is True

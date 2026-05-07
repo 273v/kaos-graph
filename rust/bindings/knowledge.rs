@@ -8,7 +8,7 @@ use super::graph::PyGraph;
 use crate::core::knowledge;
 
 /// Helper: convert a Python value to serde_json::Value (simplified).
-fn py_to_json_value(obj: &Bound<'_, pyo3::PyAny>) -> PyResult<Value> {
+fn py_to_json_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
     if obj.is_none() {
         Ok(Value::Null)
     } else if let Ok(b) = obj.extract::<bool>() {
@@ -75,7 +75,7 @@ fn diff_graphs(py: Python<'_>, old: &PyGraph, new: &PyGraph) -> PyResult<Py<PyDi
 fn extract_subgraph_by_property(
     graph: &PyGraph,
     key: &str,
-    value: &Bound<'_, pyo3::PyAny>,
+    value: &Bound<'_, PyAny>,
 ) -> PyResult<PyGraph> {
     let val = py_to_json_value(value)?;
     Ok(PyGraph {
@@ -130,7 +130,7 @@ fn degree_distribution(py: Python<'_>, graph: &PyGraph) -> PyResult<Py<PyDict>> 
 }
 
 /// Register the knowledge submodule.
-pub fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
+pub(crate) fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new(parent.py(), "knowledge")?;
 
     m.add_function(wrap_pyfunction!(merge_graphs, &m)?)?;
