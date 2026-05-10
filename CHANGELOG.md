@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before) and ``%TEMP%\FOLIO\FOLIO.owl`` on Windows. Same downloader
   contract; no behavior change on existing POSIX runners. Files:
   ``tests/conftest.py``, ``tests/bench_performance.py``.
+### Changed
+
+- **uv.lock is now tracked in git.** Previously gitignored at v0.1.0a1
+  because the ``[mcp]`` optional extra (and the ``kaos-mcp`` dev
+  dependency) referenced a sibling not yet on PyPI; ``uv lock``
+  couldn't resolve them. ``kaos-mcp`` shipped (0.1.0a2), so the
+  original gating reason no longer applies. Tracking the lockfile
+  gives reproducible local dev environments, lets Dependabot surface
+  sibling-version bumps as PRs, and makes the supply-chain pin set
+  publicly auditable. Mirrors the org-wide convention being adopted
+  across all 16 kaos-* repos.
 
 ### Removed
 
