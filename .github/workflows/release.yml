@@ -162,6 +162,46 @@ jobs:
           rust-toolchain: stable
           sccache: "true"
 
+      - name: Smoke test the wheel
+        # Runs on every built wheel; each matrix leg's runner IS the
+        # target platform so the cdylib gets exercised on its actual
+        # native ABI before publish. Catches PE/ELF/Mach-O dyld
+        # issues, ABI mismatches, missing-runtime-dep surprises that
+        # the build step alone can't detect. publish-pypi gates on
+        # `needs: [sdist, wheels]`, so a smoke failure blocks the
+        # entire release.
+        #
+        # `shell: bash` for multi-line `run:` / `[[ -f ... ]]` on
+        # Windows (Git Bash preinstalled). PYTHONUTF8 + PYTHONIOENCODING
+        # handle the cp1252 default codepage. Lessons from the kaos-*
+        # family ci.yml cross-OS work.
+        shell: bash
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: utf-8
+        run: |
+          python -m venv .smoke-venv
+          if [[ -f .smoke-venv/bin/python ]]; then
+            PY=".smoke-venv/bin/python"
+          else
+            PY=".smoke-venv/Scripts/python"
+          fi
+          "$PY" -m pip install --upgrade pip
+          "$PY" -m pip install dist/*.whl
+          # Build a tiny graph to exercise the cdylib, not just the
+          # package boundary. Catches Rust-core load failures that an
+          # `import kaos_graph` alone might tolerate.
+          "$PY" -c "
+          import kaos_graph as k
+          assert k.__version__, 'version missing from wheel'
+          from kaos_graph import Graph
+          g = Graph(directed=True)
+          g.add_node('a')
+          g.add_node('b')
+          g.add_edge('a', 'b', weight=1.5)
+          print(f'kaos-graph {k.__version__}: smoke OK (graph round-trip via cdylib)')
+          "
+
       - name: Upload wheel
         uses: actions/upload-artifact@v7
         with:
