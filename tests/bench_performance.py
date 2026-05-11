@@ -5,6 +5,7 @@ Run: python tests/bench_performance.py
 
 from __future__ import annotations
 
+import tempfile
 import time
 from pathlib import Path
 
@@ -183,8 +184,8 @@ def run_benchmarks():
         print(f"  JSON serialize:  {ser_ms:.1f}ms ({len(j):,} bytes)")
         print(f"  JSON deserial.:  {deser_ms:.1f}ms")
 
-    # FOLIO benchmark
-    folio_path = Path("/tmp/FOLIO/FOLIO.owl")
+    # FOLIO benchmark — same cache path as tests/conftest.py
+    folio_path = Path(tempfile.gettempdir()) / "FOLIO" / "FOLIO.owl"
     if folio_path.exists():
         print("\n--- FOLIO OWL (18MB real ontology) ---")
         from kaos_graph.rdf import load_owl
