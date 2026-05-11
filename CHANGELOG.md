@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Tests: FOLIO ontology cache path is now portable across OSes.**
+  ``tests/conftest.py`` and ``tests/bench_performance.py`` hardcoded
+  ``Path("/tmp/FOLIO/FOLIO.owl")``. On Windows that resolves to
+  ``\tmp\FOLIO\FOLIO.owl`` (a drive-relative path under the current
+  drive root, which doesn't exist and isn't writable on a fresh
+  runner). Switched both to ``Path(tempfile.gettempdir()) / "FOLIO" /
+  "FOLIO.owl"``, which is ``/tmp/FOLIO/FOLIO.owl`` on POSIX (same as
+  before) and ``%TEMP%\FOLIO\FOLIO.owl`` on Windows. Same downloader
+  contract; no behavior change on existing POSIX runners. Files:
+  ``tests/conftest.py``, ``tests/bench_performance.py``.
+
 ### Removed
 
 - **musllinux wheels (Alpine Linux / musl libc)** dropped from the

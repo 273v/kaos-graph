@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -21,7 +22,12 @@ import pytest
 # not exact byte-equivalence. If a downstream test ever needs a deterministic
 # fixture, switch this URL to a tag-pinned blob and verify ``_FOLIO_SHA256``.
 _FOLIO_URL = "https://github.com/alea-institute/folio/raw/main/FOLIO.owl"
-_FOLIO_PATH = Path("/tmp/FOLIO/FOLIO.owl")
+# Cache under the platform tempdir (``/tmp`` on POSIX, ``%TEMP%`` on
+# Windows) so the path is portable across runners. Previously hardcoded
+# ``Path("/tmp/FOLIO/FOLIO.owl")`` which resolves to ``\tmp\FOLIO\FOLIO.owl``
+# on Windows — a drive-relative path under the current drive root, which
+# doesn't exist and isn't writable on a fresh runner.
+_FOLIO_PATH = Path(tempfile.gettempdir()) / "FOLIO" / "FOLIO.owl"
 _FOLIO_MIN_BYTES = 5 * 1024 * 1024  # 5 MiB sanity-check floor
 _FOLIO_SHA256: str | None = None  # set when we pin a tag
 
