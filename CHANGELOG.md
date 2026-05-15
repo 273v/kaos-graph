@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`kaos-graph-walk.nodes` parameter now declares its element
+  type.** Previously the schema was `type=array` with no `items`,
+  which OpenAI's strict JSON Schema validator rejected with HTTP
+  400 `invalid_function_parameters`, taking down the whole tool
+  catalog for openai-provider turns. Now
+  `items: {type: "string"}` because node IDs are strings.
+  kaos-core 0.1.0a7's defensive `items: {}` floor is belt +
+  suspenders.
+
 ## [0.1.0a3] — 2026-05-11
 
 ### Fixed
