@@ -310,6 +310,7 @@ def register_core_tools(runtime: Any) -> int:
                         type="array",
                         description="Node IDs for 'subgraph' operation.",
                         required=False,
+                        constraints={"items": {"type": "string"}},
                     ),
                     ParameterSchema(
                         name="center",
