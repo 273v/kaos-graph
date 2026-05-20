@@ -26,9 +26,9 @@ rest of the KAOS ecosystem.
 ## Install
 
 ```bash
-uv add kaos-graph
+uv add "kaos-graph>=0.1.0"
 # or
-pip install kaos-graph
+pip install "kaos-graph>=0.1.0"
 ```
 
 `kaos-graph` requires Python **3.13** or newer. The published wheels
@@ -66,7 +66,7 @@ The package is built around a small set of typed primitives.
 | **Algorithms** | 40+ functions in `kaos_graph.algorithms` covering traversal (BFS/DFS, topological sort), shortest paths (Dijkstra, A*, Bellman-Ford, Floyd-Warshall), centrality (PageRank, betweenness, closeness, eigenvector), community (Louvain, label propagation), connectivity (SCC, weakly-connected, articulation points, bridges), structure (cycles, cliques, isomorphism, max flow), and DAG ops (longest path, critical path). |
 | **Sparse PageRank** | O((V+E)·n) instead of petgraph's O(V²·E·n). FOLIO ontology (~25K nodes, ~36K edges): 7 ms vs petgraph's 105 s. The marketing-grade benchmark exercised on every CI run. |
 | **RDF / SPARQL** | `oxrdf` + `oxrdfio` parsers (Turtle, N-Triples, N-Quads, RDF/XML, TriG) with byte / triple / size caps applied at the FFI boundary. SPARQL via `pyoxigraph` opt-in through the `[rdf]` extra. |
-| **I/O & bridges** | JSON (round-trippable), GraphML / GEXF (defusedxml-hardened), edgelist, adjacency-list, mermaid, dot. NetworkX bridge; Polars / DuckDB tabular bridge planned via the `[tabular]` extra in `0.1.0a2`. |
+| **I/O & bridges** | JSON (round-trippable), GraphML / GEXF (defusedxml-hardened), edgelist, adjacency-list, mermaid, dot. NetworkX bridge; Polars / DuckDB tabular bridge available via the `[tabular]` extra. |
 | **Knowledge graph** | `Schema`, `KnowledgeGraph`, fact ingestion, reasoning rules, ontology bridges. |
 | **Storage** | VFS-backed `save_to_vfs` / `load_from_vfs` with name validation against namespace escape. |
 
@@ -82,9 +82,9 @@ kaos-graph-serve            # MCP server, stdio transport
 kaos-graph-serve --http     # MCP server, streamable HTTP (loopback only)
 ```
 
-Note: 17 MCP tools are registered by `register_graph_tools()` and become
-available with `pip install kaos-graph[mcp]` once the `kaos-mcp`
-companion package publishes (planned for `0.1.0a2`).
+Note: 17 MCP tools are registered by `register_graph_tools()` and are
+available with `pip install "kaos-graph[mcp]>=0.1.0"` (pulls in
+`kaos-mcp`).
 
 ## Compatibility & status
 
@@ -92,10 +92,18 @@ companion package publishes (planned for `0.1.0a2`).
 |---|---|
 | **Python** | 3.13, 3.14 (informational matrix entries for 3.14t free-threaded and 3.15-dev). One `cp313-abi3` wheel per OS/arch covers all 3.13+ minors. |
 | **OS** | Linux (manylinux + musllinux, x86_64 + aarch64), macOS arm64, Windows x86_64, Windows arm64. macOS x86_64 deliberately skipped (Apple ended Intel sales in 2023). |
-| **Maturity** | Alpha. The public API is documented in `kaos_graph.__all__`. |
+| **Maturity** | 0.1.0 GA. The public API is documented in `kaos_graph.__all__`. |
 | **Stability policy** | Pre-1.0: minor bumps may change behaviour. Every change is documented in [`CHANGELOG.md`](CHANGELOG.md). |
 | **Test coverage** | 173 Rust unit tests + 402 Python tests passing (575 total). 38 dedicated security regressions covering the audit-pass A2 + two follow-up rounds. |
 | **Type checker** | Validated with [`ty`](https://docs.astral.sh/ty/), Astral's Python type checker. |
+
+## Documentation
+
+Per-package reference: [`docs/`](docs/) in this repo.
+
+Cross-cutting KAOS guides (agentic patterns, persona presets, settings
+policy, citations, MCP data flow, migration to 0.1.0 GA) live in
+[`kaos-modules/docs/guides/`](https://github.com/273v/kaos-modules/tree/main/docs/guides).
 
 ## Companion packages
 
