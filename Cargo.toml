@@ -1,6 +1,6 @@
 [package]
 name = "kaos-graph"
-version = "0.1.0-alpha.5"
+version = "0.1.0-rc.1"
 edition = "2021"
 rust-version = "1.83"
 license = "Apache-2.0"

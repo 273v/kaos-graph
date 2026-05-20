@@ -72,7 +72,7 @@ Changelog = "https://github.com/273v/kaos-graph/blob/main/CHANGELOG.md"
 # (transitive) to known-safe versions. cryptography pin matches kaos-core's
 # CVE-driven floor (CVE-2026-34073, CVE-2026-39892).
 dev = [
-  "kaos-core>=0.1.0a1",
+  "kaos-core>=0.1.0rc1,<0.2",
   "cryptography>=46.0.7",
   "maturin>=1.8,<2.0",  # needed for `uv run maturin develop` in CI
   "networkx>=3.5",
