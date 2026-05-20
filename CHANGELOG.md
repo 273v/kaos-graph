@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-alpha.5] — 2026-05-20
+
+### Changed — kaos-core 0.1.0a12 catch-up (WU-D.3)
+
+- Layer 1 Rust+Python catch-up release per the 0.1.0 GA plan
+  (WU-D.3). No runtime source changes — `kaos-core` is dev-only for
+  this package; the Rust graph/RDF core has no kaos-core dependency
+  at the boundary, and the 0.1.0a10 URI redesign + 0.1.0a12
+  capability type land cleanly.
+- `uv.lock` refreshed: dev-group `kaos-core` 0.1.0a10 → 0.1.0a12.
+- Linux x86_64 `maturin develop --release` build is green; CI matrix
+  builds macOS arm64 + Windows wheels on tag push.
+
+### Verified
+- Rust QA: `cargo fmt`, `cargo clippy --all-targets -- -D warnings`,
+  `cargo test --no-default-features` (173 passed).
+- Python QA (with `--extra rdf`, matching `quality.yml`):
+  `ruff format --check`, `ruff check`, `ty check`,
+  `pytest -m "not live and not network and not slow and not integration"`
+  (376 passed, 8 skipped — sibling packages not in default install,
+  54 deselected).
+
 ## [0.1.0-alpha.4] — 2026-05-15
 
 ### Fixed
