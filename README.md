@@ -66,8 +66,8 @@ The package is built around a small set of typed primitives.
 | **Algorithms** | 40+ functions in `kaos_graph.algorithms` covering traversal (BFS/DFS, topological sort), shortest paths (Dijkstra, A*, Bellman-Ford, Floyd-Warshall), centrality (PageRank, betweenness, closeness, eigenvector), community (Louvain, label propagation), connectivity (SCC, weakly-connected, articulation points, bridges), structure (cycles, cliques, isomorphism, max flow), and DAG ops (longest path, critical path). |
 | **Sparse PageRank** | O((V+E)·n) instead of petgraph's O(V²·E·n). FOLIO ontology (~25K nodes, ~36K edges): 7 ms vs petgraph's 105 s. The marketing-grade benchmark exercised on every CI run. |
 | **RDF / SPARQL** | `oxrdf` + `oxrdfio` parsers (Turtle, N-Triples, N-Quads, RDF/XML, TriG) with byte / triple / size caps applied at the FFI boundary. SPARQL via `pyoxigraph` opt-in through the `[rdf]` extra. |
-| **I/O & bridges** | JSON (round-trippable), GraphML / GEXF (defusedxml-hardened), edgelist, adjacency-list, mermaid, dot. NetworkX bridge; Polars / DuckDB tabular bridge available via the `[tabular]` extra. |
-| **Knowledge graph** | `Schema`, `KnowledgeGraph`, fact ingestion, reasoning rules, ontology bridges. |
+| **I/O & bridges** | JSON (round-trippable), GraphML / GEXF (defusedxml-hardened), adjacency-list, mermaid, dot. `kaos-content` `TabularDocument` bridge available via the `[tabular]` extra. |
+| **Schema** | `GraphSchema`, `NodeType`, `EdgeType`, `SchemaViolation` for property-graph validation. |
 | **Storage** | VFS-backed `save_to_vfs` / `load_from_vfs` with name validation against namespace escape. |
 
 ## CLI
