@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `[mcp]`, `[tabular]`, `[programs]` extras declared
+
+Declared three previously-undeclared optional-dependencies:
+
+- `mcp = ["kaos-core>=0.1.0,<0.2", "kaos-mcp>=0.1.0,<0.2"]` — required
+  by `kaos-graph-serve` (and referenced by `README.md:85-87`).
+- `tabular = ["kaos-content>=0.1.0,<0.2"]` — required by the Polars /
+  DuckDB tabular bridge (referenced by `README.md:69`).
+- `programs = ["kaos-llm-core>=0.1.0,<0.2"]` — required by the
+  trace-to-graph program tool (referenced by
+  `python/kaos_graph/tools/_programs.py:73`).
+
+The extras were already advertised by README, runtime tool errors, and
+`kaos-modules/docs/guides/dependency-reference.md` but were not declared
+because `kaos-mcp` / `kaos-content` / `kaos-llm-core` were not on PyPI
+when v0.1.0a1 shipped. The 0.1.0 GA cascade resolved the prerequisite.
+
+`tests/unit/test_serve_install_contract.py` pins the install contract:
+`kaos-graph-serve` exits 1 with `[mcp]` and `kaos-graph[mcp]` in stderr
+when `kaos-mcp` is unavailable.
+
+Also updated `python/kaos_graph/serve.py` error message to cite the
+canonical `pip install kaos-graph[mcp]` install hint instead of
+`pip install kaos-core kaos-mcp`. Closes audit-04/kaos-graph.md F-001.
+
+
 ## [0.1.0] — 2026-05-20
 
 ### Changed — WU-L of 0.1.0 GA plan

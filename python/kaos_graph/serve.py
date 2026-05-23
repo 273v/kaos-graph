@@ -101,7 +101,7 @@ def main(argv: list[str] | None = None) -> None:
     except ImportError as e:
         print(
             f"kaos-mcp and kaos-core are required for the MCP server: {e}\n"
-            "Install with: pip install kaos-core kaos-mcp",
+            "Install with: pip install kaos-graph[mcp]",
             file=sys.stderr,
         )
         sys.exit(1)
