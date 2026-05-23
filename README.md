@@ -66,8 +66,8 @@ The package is built around a small set of typed primitives.
 | **Algorithms** | 40+ functions in `kaos_graph.algorithms` covering traversal (BFS/DFS, topological sort), shortest paths (Dijkstra, A*, Bellman-Ford, Floyd-Warshall), centrality (PageRank, betweenness, closeness, eigenvector), community (Louvain, label propagation), connectivity (SCC, weakly-connected, articulation points, bridges), structure (cycles, cliques, isomorphism, max flow), and DAG ops (longest path, critical path). |
 | **Sparse PageRank** | O((V+E)·n) instead of petgraph's O(V²·E·n). FOLIO ontology (~25K nodes, ~36K edges): 7 ms vs petgraph's 105 s. The marketing-grade benchmark exercised on every CI run. |
 | **RDF / SPARQL** | `oxrdf` + `oxrdfio` parsers (Turtle, N-Triples, N-Quads, RDF/XML, TriG) with byte / triple / size caps applied at the FFI boundary. SPARQL via `pyoxigraph` opt-in through the `[rdf]` extra. |
-| **I/O & bridges** | JSON (round-trippable), GraphML / GEXF (defusedxml-hardened), edgelist, adjacency-list, mermaid, dot. NetworkX bridge; Polars / DuckDB tabular bridge available via the `[tabular]` extra. |
-| **Knowledge graph** | `Schema`, `KnowledgeGraph`, fact ingestion, reasoning rules, ontology bridges. |
+| **I/O & bridges** | JSON (round-trippable), GraphML / GEXF (defusedxml-hardened), adjacency-list, mermaid, dot. `kaos-content` `TabularDocument` bridge available via the `[tabular]` extra. |
+| **Schema** | `GraphSchema`, `NodeType`, `EdgeType`, `SchemaViolation` for property-graph validation. |
 | **Storage** | VFS-backed `save_to_vfs` / `load_from_vfs` with name validation against namespace escape. |
 
 ## CLI
@@ -92,7 +92,7 @@ available with `pip install "kaos-graph[mcp]>=0.1.0"` (pulls in
 |---|---|
 | **Python** | 3.13, 3.14 (informational matrix entries for 3.14t free-threaded and 3.15-dev). One `cp313-abi3` wheel per OS/arch covers all 3.13+ minors. |
 | **OS** | Linux (manylinux + musllinux, x86_64 + aarch64), macOS arm64, Windows x86_64, Windows arm64. macOS x86_64 deliberately skipped (Apple ended Intel sales in 2023). |
-| **Maturity** | 0.1.0 GA. The public API is documented in `kaos_graph.__all__`. |
+| **Maturity** | 0.1.0 GA. The top-level `kaos_graph.__all__` documents the core types (`Graph`, `Node`, `Edge`, `Triple`, `BfsNode`, `DfsEvent`, `__version__`). The full public API is layered by subpackage and is documented in each subpackage's own `__all__`: `kaos_graph.algorithms.__all__` (42 algorithm functions), `kaos_graph.schema.__all__` (`GraphSchema`, `NodeType`, `EdgeType`, `SchemaViolation`), `kaos_graph.io.__all__` (JSON, GraphML, GEXF, adjacency-list, mermaid, dot), `kaos_graph.rdf.__all__` (RDF/SPARQL via the `[rdf]` extra), `kaos_graph.knowledge.__all__`, `kaos_graph.tools.__all__` (MCP tools), and `kaos_graph.errors.__all__`. Import from the subpackage that owns the symbol (`from kaos_graph.algorithms import pagerank`, etc.). |
 | **Stability policy** | Pre-1.0: minor bumps may change behaviour. Every change is documented in [`CHANGELOG.md`](CHANGELOG.md). |
 | **Test coverage** | 173 Rust unit tests + 402 Python tests passing (575 total). 38 dedicated security regressions covering the audit-pass A2 + two follow-up rounds. |
 | **Type checker** | Validated with [`ty`](https://docs.astral.sh/ty/), Astral's Python type checker. |
