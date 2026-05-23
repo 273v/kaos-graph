@@ -52,13 +52,25 @@ dependencies = [
 kaos-graph = "kaos_graph.cli:main"
 kaos-graph-serve = "kaos_graph.serve:main"
 
-# Only `[rdf]` ships at v0.1.0a1. The `[mcp]`, `[tabular]`, and `[programs]`
-# extras land in a follow-up release once kaos-mcp / kaos-content /
-# kaos-llm-core are on PyPI (Wave 3 of docs/oss/00-overview/decisions.md
-# D013-rev). Until then, declaring them would break `uv lock` because the
-# resolver requires every extra to resolve at lock time.
 [project.optional-dependencies]
 rdf = ["pyoxigraph>=0.5"]
+# MCP server — required by the `kaos-graph-serve` console script
+# (see `python/kaos_graph/serve.py`). Install with
+# `pip install kaos-graph[mcp]` to run the graph MCP server.
+mcp = [
+  "kaos-core>=0.1.0,<0.2",
+  "kaos-mcp>=0.1.0,<0.2",
+]
+# Tabular bridge — Polars / DuckDB IO via kaos-content. Install with
+# `pip install kaos-graph[tabular]` to use the tabular bridge tools.
+tabular = [
+  "kaos-content>=0.1.0,<0.2",
+]
+# Program / trace-to-graph integration — typed LLM programs via
+# kaos-llm-core. Install with `pip install kaos-graph[programs]`.
+programs = [
+  "kaos-llm-core>=0.1.0,<0.2",
+]
 
 [project.urls]
 Homepage = "https://kelvin.legal"
