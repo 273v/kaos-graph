@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-05-25
+
+Dependabot batch — automated dep bumps. Skips 0.1.2 due to a busted
+tag that was cancelled mid-Release (no PyPI publish occurred).
+
+### Dependabot
+
+- build(deps): bump serde_json 1.0.149 → 1.0.150 in cargo-minor group (#25)
+- build(deps): bump github/codeql-action 4.35.5 → 4.36.0 in actions-all group (#26)
+- build(deps): bump the deps-minor group with 7 updates (#27)
+
+## [0.1.2] — 2026-05-25
+
+Dependabot batch.
+
+### Dependabot
+
+- build(deps): bump serde_json 1.0.149 → 1.0.150 in cargo-minor group (#25)
+- build(deps): bump github/codeql-action 4.35.5 → 4.36.0 in actions-all group (#26)
+- build(deps): bump the deps-minor group with 7 updates (#27)
+
 ## [0.1.1] — 2026-05-23
 
 ### Added — `[mcp]`, `[tabular]`, `[programs]` extras declared
