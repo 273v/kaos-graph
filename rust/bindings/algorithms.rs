@@ -184,6 +184,15 @@ fn weakly_connected_components(graph: &PyGraph) -> Vec<Vec<String>> {
     components::weakly_connected_components(&graph.inner)
 }
 
+/// Connected-component labels over an integer edge list (no Graph build).
+/// Returns a label per node (smallest node id in its component). Raises
+/// ValueError if an edge references a node >= n_nodes.
+#[pyfunction]
+fn connected_components_from_edges(n_nodes: usize, edges: Vec<(u32, u32)>) -> PyResult<Vec<u32>> {
+    components::connected_components_from_edges(n_nodes, &edges)
+        .map_err(pyo3::exceptions::PyValueError::new_err)
+}
+
 /// Check if the graph is strongly connected.
 #[pyfunction]
 fn is_strongly_connected(graph: &PyGraph) -> bool {
@@ -398,6 +407,7 @@ pub(crate) fn register_module(parent: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(strongly_connected_components, &m)?)?;
     m.add_function(wrap_pyfunction!(num_connected_components, &m)?)?;
     m.add_function(wrap_pyfunction!(weakly_connected_components, &m)?)?;
+    m.add_function(wrap_pyfunction!(connected_components_from_edges, &m)?)?;
     m.add_function(wrap_pyfunction!(is_strongly_connected, &m)?)?;
     m.add_function(wrap_pyfunction!(is_weakly_connected, &m)?)?;
 

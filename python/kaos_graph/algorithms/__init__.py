@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from kaos_graph._rust import algorithms as _raw
 from kaos_graph._rust.graph import PyGraph
 from kaos_graph.errors import KaosGraphError
@@ -178,6 +180,41 @@ def num_connected_components(graph: Graph) -> int:
 def weakly_connected_components(graph: Graph) -> list[list[str]]:
     """Weakly connected components as lists of node IDs."""
     return _raw.weakly_connected_components(_g(graph))
+
+
+def connected_components_from_edges(
+    n_nodes: int,
+    edges: Sequence[tuple[int, int]],
+) -> list[int]:
+    """Label connected components from an integer edge list (no Graph build).
+
+    The array fast path. Takes contiguous integer node ids
+    (``0 .. n_nodes - 1``) plus any ``(m, 2)`` integer edge container —
+    a numpy array, a list of pairs, etc. — and returns a component label
+    per node, **without** the cost of constructing and string-keying a
+    property :class:`Graph` edge by edge. Designed to consume the
+    ``(m, 2)`` ``uint32`` edges produced by
+    ``kaos_nlp_core.similarity.near_duplicates`` (``.pairs``) and
+    ``knn_graph`` (``KnnGraph.edges()``) — the embedding → similarity →
+    clustering pipeline.
+
+    Each node carries the **smallest node id in its component** — a
+    canonical, deterministic label independent of edge order; isolated
+    nodes label to themselves.
+
+    Args:
+        n_nodes: total node count; nodes are ``0 .. n_nodes - 1``.
+        edges: any ``(m, 2)`` integer edge container. Each row is an
+            undirected ``(a, b)`` edge.
+
+    Returns:
+        A length-``n_nodes`` list of ``int`` component labels.
+
+    Raises:
+        ValueError: if an edge references a node ``>= n_nodes``.
+    """
+    pairs = [(int(a), int(b)) for a, b in edges]
+    return _raw.connected_components_from_edges(n_nodes, pairs)
 
 
 def is_strongly_connected(graph: Graph) -> bool:
@@ -455,6 +492,7 @@ __all__ = [
     "bridges",
     "closeness_centrality",
     "condensation",
+    "connected_components_from_edges",
     "critical_path",
     "degree_centrality",
     "density",

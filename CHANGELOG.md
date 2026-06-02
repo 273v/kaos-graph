@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-06-02
+
+### Added
+
+- `kaos_graph.algorithms.connected_components_from_edges(n_nodes, edges)`
+  — connected-component labelling directly from an integer edge list,
+  without constructing a string-keyed property `Graph`. Returns a label
+  per node (the smallest node id in its component; isolated nodes label
+  to themselves), backed by petgraph's `UnionFind`. This is the array
+  fast path for callers that already hold an `(m, 2)` integer edge set —
+  e.g. the `pairs` from `kaos_nlp_core.similarity.near_duplicates` or
+  `KnnGraph.edges()` — letting the embedding → similarity → clustering
+  pipeline get groups without paying to build a `Graph` edge by edge.
+  Raises `ValueError` if an edge references a node `>= n_nodes`. No
+  change to existing API; `abi3-py313` wheel behavior preserved.
+
 ## [0.1.3] — 2026-05-25
 
 Dependabot batch — automated dep bumps. Skips 0.1.2 due to a busted
