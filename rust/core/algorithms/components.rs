@@ -77,6 +77,53 @@ pub fn weakly_connected_components(graph: &Graph) -> Vec<Vec<String>> {
     }
 }
 
+/// Connected-component labels over an undirected **integer edge list**,
+/// without building a string-keyed property [`Graph`].
+///
+/// This is the array fast path for callers that already hold an edge list
+/// addressed by contiguous integer node id (`0..n_nodes`) — e.g. the
+/// `(m, 2)` pairs produced by `kaos_nlp_core.similarity.knn_graph` /
+/// `near_duplicates` — and want component labels without paying to
+/// construct and string-key a `Graph` edge by edge.
+///
+/// Returns a length-`n_nodes` vector where every node carries the
+/// **smallest node id in its component** — a canonical, deterministic
+/// label independent of edge order and of petgraph's union-find internal
+/// representative (isolated nodes label to themselves).
+///
+/// Errors with a message naming the offending node if any edge references
+/// a node `>= n_nodes`.
+pub fn connected_components_from_edges(
+    n_nodes: usize,
+    edges: &[(u32, u32)],
+) -> Result<Vec<u32>, String> {
+    use petgraph::unionfind::UnionFind;
+
+    let mut uf = UnionFind::new(n_nodes);
+    for &(a, b) in edges {
+        let (ai, bi) = (a as usize, b as usize);
+        if ai >= n_nodes {
+            return Err(format!("edge references node {a} but n_nodes is {n_nodes}"));
+        }
+        if bi >= n_nodes {
+            return Err(format!("edge references node {b} but n_nodes is {n_nodes}"));
+        }
+        uf.union(ai, bi);
+    }
+
+    // Relabel each component by the smallest member id, so the labels are
+    // stable across union order and petgraph versions (its `find` returns
+    // an arbitrary representative, not necessarily the minimum).
+    let mut root_min: Vec<u32> = (0..n_nodes as u32).collect();
+    for node in 0..n_nodes {
+        let root = uf.find(node);
+        if (node as u32) < root_min[root] {
+            root_min[root] = node as u32;
+        }
+    }
+    Ok((0..n_nodes).map(|node| root_min[uf.find(node)]).collect())
+}
+
 /// Check if the graph is strongly connected (every node reachable from every other).
 pub fn is_strongly_connected(graph: &Graph) -> bool {
     if graph.n_nodes() == 0 {
@@ -178,5 +225,34 @@ mod tests {
         g.add_node("b", HashMap::new()).unwrap();
         g.add_edge("a", "b", HashMap::new()).unwrap();
         assert!(is_weakly_connected(&g));
+    }
+
+    #[test]
+    fn test_components_from_edges_two_groups() {
+        // {0,1,2} connected; {3,4} connected; {5} isolated.
+        let edges = [(0u32, 1u32), (1, 2), (3, 4)];
+        let labels = connected_components_from_edges(6, &edges).unwrap();
+        assert_eq!(labels, vec![0, 0, 0, 3, 3, 5]);
+    }
+
+    #[test]
+    fn test_components_from_edges_all_isolated() {
+        let labels = connected_components_from_edges(4, &[]).unwrap();
+        assert_eq!(labels, vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn test_components_from_edges_canonical_min_label() {
+        // Union order makes a higher id the union-find root; the label must
+        // still be the component minimum.
+        let edges = [(2u32, 0u32), (2, 1)];
+        let labels = connected_components_from_edges(3, &edges).unwrap();
+        assert_eq!(labels, vec![0, 0, 0]);
+    }
+
+    #[test]
+    fn test_components_from_edges_invalid_node_errors() {
+        let err = connected_components_from_edges(3, &[(0, 5)]).unwrap_err();
+        assert!(err.contains("node 5"), "got: {err}");
     }
 }

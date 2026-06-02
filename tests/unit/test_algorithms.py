@@ -15,6 +15,7 @@ from kaos_graph.algorithms import (
     bfs_with_depth,
     closeness_centrality,
     condensation,
+    connected_components_from_edges,
     degree_centrality,
     density,
     descendants,
@@ -205,6 +206,34 @@ class TestComponents:
         g.add_node("b")
         g.add_edge("a", "b")
         assert is_weakly_connected(g) is True
+
+
+class TestConnectedComponentsFromEdges:
+    def test_two_groups_and_isolated(self):
+        # {0,1,2} connected, {3,4} connected, {5} isolated.
+        labels = connected_components_from_edges(6, [(0, 1), (1, 2), (3, 4)])
+        assert labels == [0, 0, 0, 3, 3, 5]
+
+    def test_all_isolated(self):
+        assert connected_components_from_edges(4, []) == [0, 1, 2, 3]
+
+    def test_canonical_min_label_independent_of_edge_order(self):
+        # Higher id appears first; label is still the component minimum.
+        assert connected_components_from_edges(3, [(2, 0), (2, 1)]) == [0, 0, 0]
+
+    def test_invalid_node_raises(self):
+        with pytest.raises(ValueError, match="node 5"):
+            connected_components_from_edges(3, [(0, 5)])
+
+    def test_accepts_tuple_iterable_grouping(self):
+        # The (m, 2) pairs that kaos_nlp_core.similarity.near_duplicates /
+        # KnnGraph.edges() emit feed straight in. Two clusters {0,1},{2,3}.
+        edges = [(0, 1), (2, 3)]
+        labels = connected_components_from_edges(4, edges)
+        assert labels[0] == labels[1]
+        assert labels[2] == labels[3]
+        assert labels[0] != labels[2]
+        assert len(set(labels)) == 2
 
 
 class TestDAG:
