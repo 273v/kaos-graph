@@ -1,0 +1,32 @@
+# Vendored copy of oxrdfxml 0.2.4 (MIT OR Apache-2.0, (c) Tpt / Oxigraph
+# contributors), ported from quick-xml 0.37 to 0.42 to clear RUSTSEC-2026-0194
+# and RUSTSEC-2026-0195. Upstream fixed this on oxigraph main (unreleased
+# oxrdfxml 0.3.0-dev) but the 0.5 / oxrdfxml 0.2.x line stays on quick-xml 0.37.
+# Wired in through [patch.crates-io] in the root Cargo.toml. Drop this directory
+# once an oxrdfio release depends on quick-xml >= 0.41.
+[package]
+edition = "2024"
+rust-version = "1.87"
+name = "oxrdfxml"
+version = "0.2.4"
+authors = ["Tpt <thomas@pellissier-tanon.fr>"]
+description = "Parser and serializer for the RDF/XML format"
+documentation = "https://docs.rs/oxrdfxml"
+readme = "README.md"
+keywords = ["RDFXML", "XML", "RDF"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/oxigraph/oxigraph/tree/master/lib/oxrdfxml"
+publish = false
+
+[features]
+default = []
+async-tokio = ["dep:tokio", "quick-xml/async-tokio"]
+rdf-12 = ["oxrdf/rdf-12"]
+
+[dependencies]
+oxilangtag = "0.1"
+oxiri = "0.2.11"
+oxrdf = "=0.3.4"
+quick-xml = "0.42"
+thiserror = ">=1.0.50, <3.0"
+tokio = { version = "1.29", features = ["io-util"], optional = true }

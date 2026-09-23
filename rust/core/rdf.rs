@@ -458,6 +458,35 @@ ex:Poodle a rdfs:Class ;
         assert!(graph.has_edge(dog, animal));
     }
 
+    /// RDF/XML goes through the in-tree oxrdfxml port (vendor/oxrdfxml).
+    /// Covers prefixed element/attribute resolution, entity expansion and
+    /// rdf:parseType="Literal" (which re-serializes namespace bindings).
+    #[test]
+    fn test_load_rdfxml() {
+        let data = r#"<?xml version="1.0"?>
+<!DOCTYPE rdf:RDF [<!ENTITY ex "http://example.org/">]>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:ex="http://example.org/">
+  <rdfs:Class rdf:about="&ex;Dog">
+    <rdfs:subClassOf rdf:resource="http://example.org/Animal"/>
+    <rdfs:label xml:lang="en">Dog</rdfs:label>
+    <ex:note rdf:parseType="Literal"><ex:b>good</ex:b> boy</ex:note>
+  </rdfs:Class>
+</rdf:RDF>"#;
+        let (graph, stats) = load_rdf_string(data, RdfFormat::RdfXml).unwrap();
+        assert_eq!(stats.total_triples, 4, "triples: {}", stats.total_triples);
+        assert!(graph.has_edge("http://example.org/Dog", "http://example.org/Animal"));
+
+        let err = load_rdf_string(
+            r#"<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><nope:x/></rdf:RDF>"#,
+            RdfFormat::RdfXml,
+        )
+        .err()
+        .expect("unknown prefix must be rejected");
+        assert!(err.contains("Unknown prefix nope"), "error: {err}");
+    }
+
     #[test]
     fn test_load_folio() {
         let folio_path = "/tmp/FOLIO/FOLIO.owl";
