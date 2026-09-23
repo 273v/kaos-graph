@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] — 2026-09-23
+
 ### Fixed
 
 - `[build-system]` now requires `maturin>=1.8.2`. maturin 1.8.0 and 1.8.1
