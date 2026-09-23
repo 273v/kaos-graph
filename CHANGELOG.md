@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`vendor/oxrdfxml`, wired via `[patch.crates-io]`). Output is identical to
   upstream oxrdfxml 0.2.4 on all 220 W3C RDF/XML test files and on FOLIO.owl.
 
+### Fixed
+
+- `[mcp]` extra now requires `kaos-mcp>=0.1.5`. Older kaos-mcp releases
+  leave `mcp` unbounded, so a fresh install could resolve mcp 2.x, which
+  removed `mcp.server.fastmcp` and broke `kaos-graph-serve`.
+
 ### Changed
 
 - Rust deps: oxrdfio 0.2.6, pyo3 0.29.2, serde 1.0.229, serde_json 1.0.151.
