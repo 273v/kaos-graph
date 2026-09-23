@@ -30,6 +30,10 @@ pyo3 = ["dep:pyo3"]
 petgraph = { version = "0.8", features = ["serde-1", "stable_graph"] }
 oxrdf = "0.3"
 oxrdfio = "0.2"
+# Not used directly: listed so maturin ships vendor/oxrdfxml in the sdist
+# (maturin only packages path dependencies, not [patch] targets). The
+# [patch.crates-io] entry below makes oxrdfio resolve to this same copy.
+oxrdfxml = { path = "vendor/oxrdfxml", version = "=0.2.4" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # abi3-py313: ship one wheel per OS/arch that works on every CPython 3.13+
@@ -49,3 +53,11 @@ lto = true
 codegen-units = 1
 opt-level = 3
 strip = "symbols"
+
+# oxrdfio 0.2.x pulls oxrdfxml 0.2.x, which depends on quick-xml 0.37
+# (RUSTSEC-2026-0194, RUSTSEC-2026-0195; fixed in quick-xml >= 0.41). Upstream
+# only fixed this on the unreleased oxigraph 0.6 line, so we build RDF/XML
+# against an in-tree port of oxrdfxml 0.2.4 to quick-xml 0.42. See
+# vendor/oxrdfxml/Cargo.toml for removal criteria.
+[patch.crates-io]
+oxrdfxml = { path = "vendor/oxrdfxml" }

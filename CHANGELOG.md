@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- RDF/XML parsing (`.rdf` / `.owl`, `format="rdfxml"`) now builds against
+  quick-xml 0.42 instead of 0.37, clearing RUSTSEC-2026-0194 (quadratic
+  duplicate-attribute check) and RUSTSEC-2026-0195 (unbounded namespace
+  allocation in `NsReader`). oxrdfio 0.2.x has no release with the fix, so
+  the wheel builds against an in-tree port of oxrdfxml 0.2.4
+  (`vendor/oxrdfxml`, wired via `[patch.crates-io]`). Output is identical to
+  upstream oxrdfxml 0.2.4 on all 220 W3C RDF/XML test files and on FOLIO.owl.
+
+### Changed
+
+- Rust deps: oxrdfio 0.2.6, pyo3 0.29.2, serde 1.0.229, serde_json 1.0.151.
+
 ## [0.1.4] — 2026-06-02
 
 ### Added

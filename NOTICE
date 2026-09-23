@@ -6,3 +6,8 @@ This product includes software developed at 273 Ventures LLC
 
 Licensed under the Apache License, Version 2.0. See the LICENSE file
 distributed with this software for the full text of the license.
+
+This product includes a modified copy of oxrdfxml 0.2.4 in vendor/oxrdfxml
+(Copyright (c) 2018 Oxigraph developers, dual-licensed MIT OR Apache-2.0;
+see vendor/oxrdfxml/LICENSE-MIT and vendor/oxrdfxml/LICENSE-APACHE). It was
+ported from quick-xml 0.37 to quick-xml 0.42.
