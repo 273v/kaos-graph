@@ -59,7 +59,7 @@ rdf = ["pyoxigraph>=0.5"]
 # `pip install kaos-graph[mcp]` to run the graph MCP server.
 mcp = [
   "kaos-core>=0.1.0,<0.2",
-  "kaos-mcp>=0.1.0,<0.2",
+  "kaos-mcp>=0.1.5,<0.2",
 ]
 # Tabular bridge — Polars / DuckDB IO via kaos-content. Install with
 # `pip install kaos-graph[tabular]` to use the tabular bridge tools.
